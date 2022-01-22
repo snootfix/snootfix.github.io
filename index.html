@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>Snootfix browser v1.4.2</title>
+<title>Snootfix browser v1.4.3</title>
 <meta name="author" content="examanon">
 <meta charset="UTF-8">
 <style type="text/css">
@@ -225,6 +225,7 @@ input, textarea {
         const status = document.querySelector('#submit-status').value;
         const characters = document.querySelector('#submit-characters').value;
         const rating = document.querySelector('#submit-rating').value;
+        const classification = document.querySelector('#submit-classification').value;
         const author = document.querySelector('#submit-author').value;
         const summary = document.querySelector('#submit-summary').value;
         const fanfic = document.querySelector('#submit-fanfic').value;
@@ -279,6 +280,13 @@ input, textarea {
             json += ',';
             json += '"Characters":';
             json += JSON.stringify(characters);
+        }
+        
+        // classification
+        if (classification) {
+            json += ',';
+            json += '"Classification":';
+            json += JSON.stringify(classification);
         }
         
         // rating
@@ -497,6 +505,10 @@ input, textarea {
             html += "<p>Rating</p>";
             html += "<div><input id='submit-rating' type='text' placeholder='ex.: NSFW' maxlength='10' /></div>";
             html += "<div class='helper-text'>SFW, NSFW, Semi-NSFW</div>";
+            
+            html += "<p>Classification</p>";
+            html += "<div><input id='submit-classification' type='text' placeholder='ex.: Series' maxlength='10' /></div>";
+            html += "<div class='helper-text'>Series, One-Off, Short</div>";
             
             html += "<p>Author</p>";
             html += "<div><input id='submit-author' type='text' placeholder='ex.: Anonymous' value='Anonymous' maxlength='60' /></div>";
