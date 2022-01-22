@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>Snootfix browser v1.4.1</title>
+<title>Snootfix browser v1.4.2</title>
 <meta name="author" content="examanon">
 <meta charset="UTF-8">
 <style type="text/css">
@@ -480,28 +480,29 @@ input, textarea {
             html += "<p>Fill in the following form</p>";
             
             html += "<p>File (required)</p>";
-            html += "<div><input id='submit-file' type='text' placeholder='ex.: Anon/file name.txt' /></div>";
+            html += "<div><input id='submit-file' type='text' placeholder='ex.: Anon/file name.txt' maxlength='120' /></div>";
             html += "<div class='helper-text'>Where the fic would go if it was up on the archive mega. If your fic revolves around Fang (or any specific character), then Fang/file name.txt</div>";
+            html += "<div class='helper-text'>Please DO NOT omit the .txt part</div>";
             
             html += "<p>Title</p>";
-            html += "<div><input id='submit-title' type='text' placeholder='ex.: A Better NTR' /></div>";
+            html += "<div><input id='submit-title' type='text' placeholder='ex.: A Better NTR' maxlength='100' /></div>";
             
             html += "<p>Status</p>";
-            html += "<div><input id='submit-status' type='text' placeholder='ex.: On-Going' /></div>";
+            html += "<div><input id='submit-status' type='text' placeholder='ex.: On-Going' maxlength='10' /></div>";
             html += "<div class='helper-text'>On-Going, Complete</div>";
             
             html += "<p>Characters</p>";
-            html += "<div><input id='submit-characters' type='text' placeholder='ex.: Fang, Stella and Anon' /></div>";
+            html += "<div><input id='submit-characters' type='text' placeholder='ex.: Fang, Stella and Anon' maxlength='200' /></div>";
             
             html += "<p>Rating</p>";
-            html += "<div><input id='submit-rating' type='text' placeholder='ex.: NSFW' /></div>";
+            html += "<div><input id='submit-rating' type='text' placeholder='ex.: NSFW' maxlength='10' /></div>";
             html += "<div class='helper-text'>SFW, NSFW, Semi-NSFW</div>";
             
             html += "<p>Author</p>";
-            html += "<div><input id='submit-author' type='text' placeholder='ex.: Anonymous' value='Anonymous' /></div>";
+            html += "<div><input id='submit-author' type='text' placeholder='ex.: Anonymous' value='Anonymous' maxlength='60' /></div>";
             
             html += "<p>Summary</p>";
-            html += "<div><textarea id='submit-summary' placeholder='ex.: Anon finds out who is the best girl.' ></textarea></div>";
+            html += "<div><textarea id='submit-summary' placeholder='ex.: Anon finds out who is the best girl.'  maxlength='500'></textarea></div>";
             html += "<div class='helper-text'>Keep it short</div>";
             
             html += "<p>Fanfic (required)</p>";
