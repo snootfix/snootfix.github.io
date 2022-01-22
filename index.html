@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>Snootfix browser v1.2</title>
+<title>Snootfix browser v1.3</title>
 <meta name="author" content="examanon">
 <meta charset="UTF-8">
 <style type="text/css">
@@ -171,8 +171,6 @@ body, html {
         return result;
     }
     
-    const nl2br = str => {}
-    
     //https://stackoverflow.com/questions/9786508/javascript-atob-returning-string-contains-an-invalid-character
     function utf8_to_b64( str ) {
         return window.btoa(unescape(encodeURIComponent( str )));
@@ -293,7 +291,6 @@ body, html {
             for (const type in sort) {
                 const value = String(a[type]).localeCompare(String(b[type]));
                 const modifier = sort[type] === "ASC" ? 1 : -1;
-                console.log(a[type], b[type], value, modifier)
                 return value * modifier;
             }
         }).map(key => ({ ...flatData[key], key }));
@@ -336,7 +333,6 @@ body, html {
             if (!isShown) continue;
             
             const path = utf8_to_b64(props.path.join('Ł'));
-            console.log(path);
             html += "<div class='table-cell file' onclick='openModal(\""+path+"\")'>";
             html += "<span class='path'>" + folder + "/" + "</span>" + item;
             html += "</div>";
