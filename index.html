@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>Snootfix Booru v1.5</title>
+<title>Snootfix Booru v1.5.1</title>
 <meta name="author" content="examanon">
 <meta charset="UTF-8">
 <style type="text/css">
@@ -201,40 +201,48 @@ input, textarea {
         html += "<div class='modal-content'>";
         html += String(data.text).replaceAll('\n', "<br/>");
         html += "</div>";
+        
+        const modal = document.querySelector('#modal');
+        const backdrop = document.querySelector('#backdrop');
     
-        document.querySelector('#modal').innerHTML = html;
-        document.querySelector('#modal').style.display = "block";
-        document.querySelector('#backdrop').style.display = "block";
-        document.querySelector('#backdrop').onclick  = closeModal;
+        modal.innerHTML = html;
+        modal.style.display = "block";
+        backdrop.style.display = "block";
+        backdrop.onclick  = closeModal;
     };
     
     const closeModal = () => {
-        document.querySelector('#modal').innerHTML = "";
-        document.querySelector('#modal').style.display = "none";
-        document.querySelector('#backdrop').style.display = "none";
-        document.querySelector('#backdrop').onclick  = undefined;
+        const modal = document.querySelector('#modal');
+        const backdrop = document.querySelector('#backdrop');
+    
+        modal.innerHTML = "";
+        modal.style.display = "none";
+        backdrop.style.display = "none";
+        backdrop.onclick  = undefined;
     };
     
     const evaluateSubmitForm = () => {
+        let json = "";
+        
+        const processField = (code, label) => {
+            const value = document.querySelector(`#submit-${code}`).value;
+            if (value) {
+                json += ',';
+                json += `"${label}":`;
+                json += JSON.stringify(value);
+            }
+        };
+    
         const file = document.querySelector('#submit-file').value;
-        const title = document.querySelector('#submit-title').value;
-        const status = document.querySelector('#submit-status').value;
-        const characters = document.querySelector('#submit-characters').value;
-        const rating = document.querySelector('#submit-rating').value;
-        const classification = document.querySelector('#submit-classification').value;
-        const author = document.querySelector('#submit-author').value;
-        const summary = document.querySelector('#submit-summary').value;
         const fanfic = document.querySelector('#submit-fanfic').value;
+        
+        const path = file.split("/");
         
         if (!file) alert("File field is required!");
         if (!fanfic) alert("Fanfic field is required!");
         
-        const path = file.split("/");
-        
         if (path.length < 2) alert("Specify folder and file name!");
         if (path.length > 2) alert("Invalid file path!");
-        
-        let json = "";
         
         // start
         json += '{';
@@ -258,53 +266,25 @@ input, textarea {
         json += JSON.stringify(fanfic);
         
         // title
-        if (title) {
-            json += ',';
-            json += '"Title":';
-            json += JSON.stringify(title);
-        }
+        processField("title", "Title");
         
         // status
-        if (title) {
-            json += ',';
-            json += '"Status":';
-            json += JSON.stringify(status);
-        }
+        processField("status", "Status");
         
         // characters
-        if (characters) {
-            json += ',';
-            json += '"Characters":';
-            json += JSON.stringify(characters);
-        }
+        processField("characters", "Characters");
         
         // classification
-        if (classification) {
-            json += ',';
-            json += '"Classification":';
-            json += JSON.stringify(classification);
-        }
+        processField("classification", "Classification");
         
         // rating
-        if (rating) {
-            json += ',';
-            json += '"Rating":';
-            json += JSON.stringify(rating);
-        }
+        processField("rating", "Rating");
         
         // author
-        if (author) {
-            json += ',';
-            json += '"Author":';
-            json += JSON.stringify(author);
-        }
+        processField("author", "Author");
         
         // summary
-        if (summary) {
-            json += ',';
-            json += '"Summary":';
-            json += JSON.stringify(summary);
-        }
+        processField("summary", "Summary");
         
         // folder end
         json += '}';
@@ -321,22 +301,24 @@ input, textarea {
         const filterables = columns.filter(({ special }) => (special || []).includes("filter"));
         const categories = filterables.map(({ keyword }) => keyword);
         
+        // build dictionary of columns
         const dictionary = {};
         for (const category of categories) {
             dictionary[category] = [];
         }
         
-        for (const folder in DATA.data) {
-            for (const item in DATA.data[folder]) {
-                for (const category of categories) {
-                    const props = DATA.data[folder][item];
-                    if (props[category]) {
-                        dictionary[category] = merge(dictionary[category], [props[category]]);
-                    }
+        // populate dictionary items with possible values
+        const flatData = flatten(DATA.data);
+        for (const item in flatData) {
+            const props = flatData[item];
+            for (const category of categories) {
+                if (props[category]) {
+                    dictionary[category] = merge(dictionary[category], [props[category]]);
                 }
             }
         }
         
+        // for each dictionary item, assign a random color
         const styles = {};
         for (const category of categories) {
             const prefix = `${category}-`;
