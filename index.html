@@ -209,7 +209,8 @@ input, textarea {
 
 //#region Helpers    
     const permalinkAlert = value => {
-        alert(document.location.pathname + '?fanfic=' + value);
+        const baseUrl = document.location.href.split("?")[0];
+        alert(baseUrl + '?fanfic=' + value);
     };
     
     const openModal = (pathStr, closeable = true) => {
