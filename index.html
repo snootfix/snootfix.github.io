@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>Snootfix Booru v1.8</title>
+<title>Snootfix Booru v1.8.1</title>
 <meta name="author" content="examanon">
 <meta charset="UTF-8">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -240,7 +240,7 @@ input, textarea {
     
     const getPins = () => {
         try {
-            return JSON.parse(localStorage.getItem('__snootfix_pins'));
+            return JSON.parse(localStorage.getItem('__snootfix_pins')) || [];
         } catch {
             return [];
         }
