@@ -2,6 +2,7 @@
     
     const PROPS_URL = "https://pastebin.com/raw/NPihZzpu";
     const DATA_PATH = "./data/";
+    const MIGRATIONS_PATH = "./migrations/";
     
     $create_process_file = fn($props) => function ($path) use ($props) {
         $output = [];
@@ -45,21 +46,76 @@
         return $output;
     };
     
-    $execute = function () use ($process_data) {
+    $generate_base_dataset = function () use ($process_data) {
         $props = json_decode(file_get_contents(PROPS_URL), true);
         
         $output = array(
             "view" => $props["view"],
-            "data" => $process_data($props["preprocessor"])
+            "data" => $process_data($props["preprocessor"]),
+            "timestamp" => date('Y-m-d H:i:s')
         );
         
         return $output;
     };
     
-    $data = $execute();
-    $json = json_encode($data);
+    $process_migration = function ($path) {
+        $output = [];
+        
+        $src = json_decode(file_get_contents($path), true);
+        $folders = array_keys($src);
+        
+        foreach ($folders as $folder) {
+            $output[$folder] = [];
+            
+            $items = $src[$folder];
+            foreach ($items as $item) :
+                $filename = $item["path"][1];
+                $output[$folder][$filename] = $item;
+            endforeach;
+        }
+        
+        return $output;
+    };
     
-    //TODO: return columns, filter options, color coding (add color coding to config?)
-    header('Content-Type: application/json; charset=utf-8');
-    echo($json);
+    $generate_migrations_dataset = function () use ($process_migration) {
+        $output = [];
+        
+        $files = array_slice(scandir(MIGRATIONS_PATH), 2);
+        foreach ($files as $file) :
+            $output[] = $process_migration(MIGRATIONS_PATH . '/' . $file);
+        endforeach;
+        
+        return $output;
+    };
+    
+    $apply_migration = function ($base, $migration) {
+        $output = $base;
+        
+        $folders = array_keys($output);
+        foreach ($folders as $folder) :
+            $output[$folder] = array_merge($output[$folder], $migration[$folder]);
+        endforeach;
+        
+        return $output;
+    };
+    
+    //TODO: return color coding (add color coding to config?)
+    $execute = function () use ($generate_base_dataset, $generate_migrations_dataset, $apply_migration) {
+        $base_dataset = $generate_base_dataset();
+        $migrations_dataset = $generate_migrations_dataset();
+        
+        foreach ($migrations_dataset as $migration) :
+            $base_dataset["data"] = $apply_migration($base_dataset["data"], $migration);
+        endforeach;
+        
+        return $base_dataset;
+    };
+    
+    $render = function ($data) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo(json_encode($data));
+    };
+    
+    $dataset = $execute();
+    $render($dataset);
     
