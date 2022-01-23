@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>Snootfix Booru v1.7</title>
+<title>Snootfix Booru v1.8</title>
 <meta name="author" content="examanon">
 <meta charset="UTF-8">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -24,6 +24,22 @@ input, textarea {
 .share-icon:hover {
     cursor: pointer;
     opacity: 0.6;
+}
+
+.pin-icon {
+    margin-right: 8px;
+    width: 20px;
+    height: 20px;
+    opacity: 0.1;
+}
+
+.pin-icon:hover {
+    cursor: pointer;
+    opacity: 1;
+}
+
+.pinned {
+    opacity: 1;
 }
 
 .big-textarea {
@@ -75,25 +91,35 @@ input, textarea {
     font-weight: bold;
     position: sticky;
     top: 0;
+    z-index: 9001;
+}
+
+.header-cell:first-child {
+    padding-left: 32px;
 }
 
 .table-cell {
     padding: 4px 8px;
     border-bottom: 1px solid black;
     font-size: 14px;
+    display: flex;
+    align-items: top;
+}
+
+.table-cell:nth-child(8n+1) {
 }
 
 .file {
     font-weight: bold;
 }
 
-.file:hover {
-    cursor: pointer;
-    opacity: 0.6;
-}
-
 .path {
     color: gray;
+}
+
+.clickable:hover {
+    cursor: pointer;
+    opacity: 0.6;
 }
 
 .filter-clear {
@@ -203,7 +229,6 @@ input, textarea {
     function b64_to_utf8( str ) {
         return decodeURIComponent(escape(window.atob( str )));
     }
-
     
 //#endregion
 
@@ -211,6 +236,23 @@ input, textarea {
     const permalinkAlert = value => {
         const baseUrl = document.location.href.split("?")[0];
         alert(baseUrl + '?fanfic=' + value);
+    };
+    
+    const getPins = () => {
+        try {
+            return JSON.parse(localStorage.getItem('__snootfix_pins'));
+        } catch {
+            return [];
+        }
+    }
+    
+    const pin = permalink => {
+        const pins =  getPins();
+        const isPinned = pins.includes(permalink);
+        const newPins = isPinned ? pins.filter(pin => pin !== permalink) : [...pins, permalink];
+        localStorage.setItem('__snootfix_pins', JSON.stringify(newPins));
+        
+        window.location.reload();
     };
     
     const openModal = (pathStr, closeable = true) => {
@@ -411,6 +453,7 @@ input, textarea {
             const { data, timestamp, view: { columns } } = DATA;
             const { styles, dictionary } = parseValues(columns);
             const { filter, sort, submit, statistics, fanficId } = parseQuery();
+            const pins = getPins();
             
             const hasFilter = !!Object.keys(filter).length;
             const hasSort = !!Object.keys(sort).length;
@@ -427,24 +470,37 @@ input, textarea {
                 statistics,
                 hasFilter,
                 hasSort,
-                fanficId
+                fanficId,
+                pins
             };
         };
         
         const getDataSet = () => {
-            const { data, sort, hasSort } = getResources();
+            const { data, sort, hasSort, pins } = getResources();
             
             //apply sorting
             const flatData = flatten(data);
             const sortedData = Object.keys(flatData)
                 .sort((aKey, bKey) => {
-                    if (!hasSort) return 0;
-                    
                     const a = flatData[aKey];
                     const b = flatData[bKey];
+                    const aPermalink = utf8_to_b64(a.path[1]);
+                    const bPermalink = utf8_to_b64(b.path[1]);
+                    const aIsPinned = pins.includes(aPermalink);
+                    const bIsPinned = pins.includes(bPermalink);
+                    
+                    if (!hasSort) {
+                        if (aIsPinned && !bIsPinned) return -1;
+                        if (!aIsPinned && bIsPinned) return 1;
+                        return 0;
+                    }
                     
                     for (const type in sort) {
-                        const value = String(a[type]).localeCompare(String(b[type]));
+                        const value = (() => {
+                            if (aIsPinned && !bIsPinned) return -1;
+                            if (!aIsPinned && bIsPinned) return 1;
+                            return String(a[type]).localeCompare(String(b[type]));
+                        })();
                         const modifier = sort[type] === "ASC" ? 1 : -1;
                         return value * modifier;
                     }
@@ -455,7 +511,7 @@ input, textarea {
         }
         
         const renderTable = () => {
-            const { columns, sort, filter, styles } = getResources();
+            const { columns, sort, filter, styles, pins } = getResources();
             const dataSet = getDataSet();
             
             // HEADER
@@ -521,11 +577,17 @@ input, textarea {
                 
                     const renderBodyCell = column => {
                         let html = "";
+                        
+                        const permalink = utf8_to_b64(props.path[1]);
+                        const isPinned = pins.includes(permalink);
                     
                         if (column.code === "file") {
                             const path = utf8_to_b64(props.path.join('Ł'));
-                            html += "<div class='table-cell file' onclick='openModal(\""+path+"\")'>";
-                            html += "<span class='path'>" + folder + "/" + "</span>" + item;
+                            const pinClass = isPinned ? "pinned" : "";
+                            
+                            html += "<div class='table-cell file'>";
+                            html += "<image src='pin.svg' class='pin-icon "+pinClass+"' title='Pin' onclick='pin(\""+permalink+"\")' />";
+                            html += "<div class='clickable' onclick='openModal(\""+path+"\")'><span class='path'>" + folder + "/" + "</span>" + item + "</div>";
                             html += "</div>";
                         } else {
                             const col = column.keyword;
