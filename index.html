@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>Snootfix Booru v1.6</title>
+<title>Snootfix Booru v1.7</title>
 <meta name="author" content="examanon">
 <meta charset="UTF-8">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -13,6 +13,17 @@ body, html {
 
 input, textarea {
     min-width: 300px;
+}
+
+.share-icon {
+    margin-left: 8px;
+    width: 20px;
+    height: 20px;
+}
+
+.share-icon:hover {
+    cursor: pointer;
+    opacity: 0.6;
 }
 
 .big-textarea {
@@ -40,7 +51,8 @@ input, textarea {
 }
 
 .modal-content {
-    max-width: calc(100% - 96px - 48px);
+    max-width: calc(100% - 48px);
+    text-align: justify;
 }
 
 #backdrop {
@@ -191,18 +203,26 @@ input, textarea {
     function b64_to_utf8( str ) {
         return decodeURIComponent(escape(window.atob( str )));
     }
-
+    
+    const clipboardCopy = value => {
+        alert(document.location.pathname + '?fanfic=' + encodeURIComponent(value));
+    };
+    
 //#endregion
 
 //#region Helpers
     
-    const openModal = pathStr => {
+    const openModal = (pathStr, closeable = true) => {
         const path = b64_to_utf8(pathStr).split('Ł');
         const data = get(DATA.data, path);
         
         let html = "";
         
-        html += "<h1>" + data.Title + "</h1>";
+        html += "<h1>";
+        html += data.Title;
+        html += "<image src='share.svg' class='share-icon' title='Share' onclick='clipboardCopy(\""+data.path[1]+"\")' />";
+        html += "</h1>";
+        
         html += "<div class='modal-content'>";
         html += String(data.text).replaceAll('\n', "<br/>");
         html += "</div>";
@@ -213,7 +233,10 @@ input, textarea {
         modal.innerHTML = html;
         modal.style.display = "block";
         backdrop.style.display = "block";
-        backdrop.onclick  = closeModal;
+        
+        if (closeable) {
+            backdrop.onclick  = closeModal;
+        }
     };
     
     const closeModal = () => {
@@ -345,6 +368,7 @@ input, textarea {
         const sort = {};
         let submit = false;
         let statistics = false;
+        let fanficId = null;
         
         for (const param of params) {
             const [key, value] = param.split("=");
@@ -366,9 +390,13 @@ input, textarea {
                 statistics = true;
                 continue;
             }
+            if (key.includes("fanfic")) {
+                fanficId = decodeURI(value);
+                continue;
+            }
         }
         
-        return { filter, sort, submit, statistics };
+        return { filter, sort, submit, statistics, fanficId };
     };
 
 //#endregion
@@ -379,7 +407,7 @@ input, textarea {
         const getResources = () => {
             const { data, timestamp, view: { columns } } = DATA;
             const { styles, dictionary } = parseValues(columns);
-            const { filter, sort, submit, statistics } = parseQuery();
+            const { filter, sort, submit, statistics, fanficId } = parseQuery();
             
             const hasFilter = !!Object.keys(filter).length;
             const hasSort = !!Object.keys(sort).length;
@@ -395,7 +423,8 @@ input, textarea {
                 submit, 
                 statistics,
                 hasFilter,
-                hasSort
+                hasSort,
+                fanficId
             };
         };
         
@@ -571,7 +600,7 @@ input, textarea {
         };
         
         const renderModals = () => {
-            const { submit, statistics, timestamp, dictionary } = getResources();
+            const { submit, statistics, timestamp, dictionary, fanficId } = getResources();
             const dataSet = getDataSet();
         
             // SUBMIT FORM
@@ -633,8 +662,6 @@ input, textarea {
                 document.querySelector('#modal').innerHTML = html;
                 document.querySelector('#modal').style.display = "block";
                 document.querySelector('#backdrop').style.display = "block";
-                
-                return;
             }
             
             // STATISTICS
@@ -656,9 +683,17 @@ input, textarea {
                 document.querySelector('#modal').innerHTML = html;
                 document.querySelector('#modal').style.display = "block";
                 document.querySelector('#backdrop').style.display = "block";
-                
-                return;
             }
+            
+            // SHARED FANFIC
+            if (fanficId !== null) {
+                const item = dataSet.find(({ path }) => path[1] === fanficId);
+                const path = utf8_to_b64(item.path.join('Ł'));
+                
+                openModal(path, false);
+            }
+            
+            document.querySelector('#backdrop').onclick = () => window.location.replace('?');
         };
         
         renderContent();
