@@ -1,16 +1,28 @@
 <?php
     
+    error_reporting(E_ERROR | E_WARNING | E_PARSE);
+    
+    include "lzw.inc.php";
+    
+    // ENV
     const PROPS_URL = "https://pastebin.com/raw/NPihZzpu";
     const DATA_PATH = "./data/";
     const MIGRATIONS_PATH = "./migrations/";
+    const ENCODE = true;
+    const ENCODE_RANGE = [10000, 50000];
+    const MODE = 0; //0: render; 1: debug; 2: statistics;
     
     $create_process_file = fn($props) => function ($path) use ($props) {
         $output = [];
         
         $src = file_get_contents($path);
+        $len = strlen($src);
+        $in_encode_range = $len >= ENCODE_RANGE[0] && $len <= ENCODE_RANGE[1];
+        $should_encode = ENCODE && $in_encode_range;
         
         $output['path'] = explode('/', substr($path, 7));
-        $output['text'] = $src;
+        $output['text'] = $should_encode ? base64_encode(lzw_compress($src)) : $src;
+        $output["encoded"] = $should_encode;
         foreach ($props["keywords"] as $keyword) :
             $pattern = "/{$keyword}:.*\n/";
             if (preg_match($pattern, $src, $matches)) :
@@ -70,7 +82,12 @@
             $items = $src[$folder];
             foreach ($items as $item) :
                 $filename = $item["path"][1];
+                $len = strlen($item["text"]);
+                $in_encode_range = $len >= ENCODE_RANGE[0] && $len <= ENCODE_RANGE[1];
+                $should_encode = ENCODE && $in_encode_range;
+                if ($should_encode) $item["text"] = base64_encode(lzw_compress($item["text"]));
                 $output[$folder][$filename] = $item;
+                $output[$folder][$filename]["encoded"] = $should_encode;
             endforeach;
         }
         
@@ -99,6 +116,8 @@
         return $output;
     };
     
+    //TODO: submit form template & validation
+    //TODO: return statistics
     //TODO: return color coding (add color coding to config?)
     $execute = function () use ($generate_base_dataset, $generate_migrations_dataset, $apply_migration) {
         $base_dataset = $generate_base_dataset();
@@ -116,6 +135,111 @@
         echo(json_encode($data));
     };
     
+    //TODO: thresholds
+    $render_statistics = function ($data) {
+        $count = 0;
+        $avg = 0;
+        $sum = 0;
+        $min = 2147483647;
+        $max = 0;
+        $encoded = 0;
+        $lessThan1k = 0;
+        $lessThan2k = 0;
+        $lessThan5k = 0;
+        $lessThan8k = 0;
+        $lessThan10k = 0;
+        $lessThan20k = 0;
+        $lessThan30k = 0;
+        $lessThan50k = 0;
+        $lessThan100k = 0;
+        $moreThan100k = 0;
+        foreach ($data["data"] as $folder) :
+            foreach ($folder as $fic) :
+                $len = strlen($fic["text"]);
+                if ($fic["encoded"]) $encoded++;
+                
+                if ($len < 1000) $lessThan1k++;
+                elseif ($len < 2000) $lessThan2k++;
+                elseif ($len < 5000) $lessThan5k++;
+                elseif ($len < 8000) $lessThan8k++;
+                elseif ($len < 10000) $lessThan10k++;
+                elseif ($len < 20000) $lessThan20k++;
+                elseif ($len < 30000) $lessThan30k++;
+                elseif ($len < 50000) $lessThan50k++;
+                elseif ($len < 100000) $lessThan100k++;
+                elseif ($len > 100000) $moreThan100k++;
+                
+                if ($len < $min) $min = $len;
+                if ($len > $max) $max = $len;
+                $sum += $len;
+                $count++;
+            endforeach;
+        endforeach;
+        
+        $avg = round($sum / $count);
+        
+        echo 'encoding range   ' . ENCODE_RANGE[0] . ' - ' . ENCODE_RANGE[1];
+        
+        echo '<br/>';
+        echo '<br/>';
+        
+        echo 'min    ' . $min . '<br/>';
+        echo 'max    ' . $max . '<br/>';
+        echo 'avg    ' . $avg . '<br/>';
+        echo 'encoded    ' . $encoded . '<br/>';
+        
+        echo '<br/>';
+        
+        echo '<1k    ' . $lessThan1k . '<br/>';
+        echo '<2k    ' . $lessThan2k . '<br/>';
+        echo '<5k    ' . $lessThan5k . '<br/>';
+        echo '<8k    ' . $lessThan8k . '<br/>';
+        echo '<10k   ' . $lessThan10k . '<br/>';
+        echo '<20k   ' . $lessThan20k . '<br/>';
+        echo '<30k   ' . $lessThan30k . '<br/>';
+        echo '<50k   ' . $lessThan50k . '<br/>';
+        echo '<100k  ' . $lessThan100k . '<br/>';
+        echo '>100k  ' . $moreThan100k . '<br/>';
+        
+        echo '<br/>';
+        
+        echo 'real char count ' . $sum . '<br/>';
+        echo 'estimated char count ' . (
+            $lessThan1k * 1000 + 
+            $lessThan2k * 2000 + 
+            $lessThan5k * 5000 + 
+            $lessThan8k * 8000 + 
+            $lessThan10k * 10000 + 
+            $lessThan20k * 20000 + 
+            $lessThan30k * 30000 + 
+            $lessThan50k * 50000 + 
+            $lessThan100k * 100000
+        );
+    };
+    
+    $render_debug = function ($data, $folder, $file) {
+        //print_r($data["data"]["Multiple"]["A Game Gone Wrong.txt"]);
+
+        $txt = $data["data"][$folder][$file]["text"];
+        $txt_c = lzw_compress($txt);
+        $txt_c64 = base64_encode($txt_c);
+        //$txt_d = lzw_decompress(base64_decode($txt_c64));
+        
+        echo strlen($txt);
+        echo '<br/>';
+        echo strlen($txt_c);
+        echo '<br/>';
+        echo strlen($txt_c64);
+        echo '<br/>';
+        echo strlen($txt_d);
+        echo '<br/>';
+    };
+    
     $dataset = $execute();
-    $render($dataset);
+    
+    if (MODE === 0) $render($dataset);
+    elseif (MODE === 1) $render_debug($dataset, "Multiple", "A Game Gone Wrong.txt");
+    elseif (MODE === 2) $render_statistics($dataset);
+    
+    
     
