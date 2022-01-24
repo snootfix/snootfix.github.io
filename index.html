@@ -133,12 +133,32 @@ input, textarea {
 .filter-clear:hover {
     opacity: 0.6;
 }
+
+#loader {
+    background-color: black;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 20;
+    opacity: 0.6;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#loader > img {
+    width: 100px;
+    height: 100px;
+}
 </style>
 </head>
 <body>
     <div id="table">Loading...</div>
     <div id="modal"></div>
     <div id="backdrop"></div>
+    <div id="loader"><img src="loader.svg" /></div>
 </body>
 <script type="text/javascript">
     
@@ -241,6 +261,7 @@ input, textarea {
     };
         
     const lzw_decompress = binary => {
+        console.log('start', [...binary].length);
         // convert binary to codes
         let dictionaryCount = 256;
         let bits = 8;
@@ -263,6 +284,7 @@ input, textarea {
                 }
             }
         }
+        console.log('decompress');
         
         // decompression
         let dictionary = makeStringRange("\0", "\xFF");
@@ -286,6 +308,7 @@ input, textarea {
             }
             word = element;
         }
+        console.log('done');
         
         return output;
     };
@@ -321,12 +344,28 @@ input, textarea {
         
         const modal = document.querySelector('#modal');
         const backdrop = document.querySelector('#backdrop');
+        const loader = document.querySelector('#loader');
         
         modal.innerHTML = "Loading... (longer fics may take some time)";
         modal.style.display = "block";
         backdrop.style.display = "block";
+        loader.style.display = "flex";
         
-        setTimeout(() => new Promise(r => {
+        if (data.encoded && data.text.length > 2000) {
+            const decodedText = atob(data.text);
+            const decompressedText = lzw_decompress(decodedText.substring(0, 2000)) + '\n\nLoading...';
+            
+            let html = "";
+            
+            html += "<h1>" + data.Title + "</h1>";
+            html += "<div class='modal-content'>";
+            html += String(decompressedText).replaceAll('\n', "<br/>");
+            html += "</div>";
+            
+            modal.innerHTML = html;
+        }
+        
+        setTimeout(async () => new Promise(r => {
             const text = (() => {
                 if (data.encoded) {
                     const decodedText = atob(data.text);
@@ -351,6 +390,7 @@ input, textarea {
             html += "</div>";
         
             modal.innerHTML = html;
+            loader.style.display = "none";
             
             if (closeable) {
                 backdrop.onclick  = closeModal;
@@ -358,6 +398,7 @@ input, textarea {
             
             r();
         }), 200);
+        
         
     };
     
