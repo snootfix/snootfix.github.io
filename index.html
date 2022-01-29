@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>Snootfix Booru v1.9.2</title>
+<title>Snootfix Booru v2.0</title>
 <meta name="author" content="examanon">
 <meta charset="UTF-8">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -261,55 +261,83 @@ input, textarea {
     };
         
     const lzw_decompress = binary => {
-        console.log('start', [...binary].length);
-        // convert binary to codes
-        let dictionaryCount = 256;
-        let bits = 8;
-        const codes = Array();
-        let rest = 0;
-        let restLength = 0;
+        console.log('start', [...binary].length, binary.length);
         
-        for (let i = 0; i < [...binary].length; i++) {
-            rest = (rest << 8) + Number(binary.charCodeAt(i));
-            restLength += 8;
-            
-            if (restLength >= bits) {
-                restLength -= bits;
-                codes.push(rest >> restLength);
-                rest &= (1 << restLength) - 1;
-                dictionaryCount++;
-                
-                if (dictionaryCount > (1 << bits)) {
-                    bits++;
+        // convert binary to codes
+        const codes = (() => {
+            const b2c = (src, binary) => {
+                for (let i = 0; i < [...binary].length; i++) {
+                    src.rest = (src.rest << 8) + Number(binary.charCodeAt(i));
+                    src.restLength += 8;
+                    
+                    if (src.restLength >= src.bits) {
+                        src.restLength -= src.bits;
+                        src.codes.push(src.rest >> src.restLength);
+                        src.rest &= (1 << src.restLength) - 1;
+                        src.dictionaryCount++;
+                        
+                        if (src.dictionaryCount > (1 << src.bits)) {
+                            src.bits++;
+                        }
+                    }
                 }
+            };
+            
+            const src = {
+                dictionaryCount: 256,
+                bits: 8,
+                rest: 0,
+                restLength: 0,
+                codes: Array()
+            };
+            
+            const step = 2000;
+            for (let k = 0; k < binary.length; k += step) {
+                b2c(src, binary.substring(k, k + step));
             }
-        }
-        console.log('decompress');
+            
+            return src.codes;
+        })();
+        
+        console.log('decompress', codes);
         
         // decompression
-        let dictionary = makeStringRange("\0", "\xFF");
-        let output = "";
-        let word;
+        const output = (() => {
+            const c2w = (src, codes) => {
+                for (let i = 0; i < [...codes].length; i++) {
+                    const code = codes[i];
+                    let element = src.dictionary[code];
+          
+                    if (element === undefined) {
+                        element = src.word.concat(src.word[0]);
+                    }
+                    
+                    if (src.output.length > 0) {
+                        const dcArray = [...src.dictionary];
+                        dcArray.push(src.word.concat(element[0]));
+                        src.dictionary = [...dcArray];
+                    }
+          
+                    src.output = src.output.concat(element);
+                    src.word = element;
+                }
+            };
         
-        for (let i = 0; i < [...codes].length; i++) {
-            const code = codes[i];
-            let element = dictionary[code];
-  
-            if (element === undefined) {
-                element = word.concat(word[0]);
-            }
-  
-            output = output.concat(element);
+            const src = {
+                dictionary: makeStringRange("\0", "\xFF"),
+                word: undefined,
+                output: ""
+            };
             
-            if (i) {
-                const dcArray = [...dictionary];
-                dcArray.push(word.concat(element[0]));
-                dictionary = [...dcArray];
+            const step = 1000;
+            for (let k = 0; k < codes.length; k += step) {
+                c2w(src, codes.slice(k, k + step));
             }
-            word = element;
-        }
-        console.log('done');
+            
+            return src.output;
+        })();
         
+        console.log('done');
         return output;
     };
     
