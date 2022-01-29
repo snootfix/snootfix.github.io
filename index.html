@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>Snootfix Booru v2.0</title>
+<title>Snootfix Booru v2.0.1</title>
 <meta name="author" content="examanon">
 <meta charset="UTF-8">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -337,10 +337,10 @@ input, textarea {
             return src.output;
         })();
         
-        console.log('done');
+        console.log('done', output);
         return output;
     };
-    
+       
 //#endregion
 
 //#region Helpers
@@ -366,6 +366,20 @@ input, textarea {
         window.location.reload();
     };
     
+    //TODO: fix encoding errors
+    const unfuckText = text => {
+        return String(text)
+            .replaceAll('\n', "<br/>")
+            .replaceAll('Â¡', "¡")
+            .replaceAll('â', "—")
+            .replaceAll('â¦', "...")
+            .replaceAll('â', "-")
+            .replaceAll('â', "'")
+            .replaceAll('â', "'")
+            .replaceAll('â', '"')
+            .replaceAll('â', '"');
+    };
+    
     const openModal = (pathStr, closeable = true) => {
         const path = b64_to_utf8(pathStr).split('Ł');
         const data = get(DATA.data, path);
@@ -387,7 +401,7 @@ input, textarea {
             
             html += "<h1>" + data.Title + "</h1>";
             html += "<div class='modal-content'>";
-            html += String(decompressedText).replaceAll('\n', "<br/>");
+            html += unfuckText(decompressedText);
             html += "</div>";
             
             modal.innerHTML = html;
@@ -414,7 +428,7 @@ input, textarea {
             html += "</h1>";
             
             html += "<div class='modal-content'>";
-            html += String(text).replaceAll('\n', "<br/>");
+            html += unfuckText(text);
             html += "</div>";
         
             modal.innerHTML = html;
