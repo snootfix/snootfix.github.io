@@ -2,15 +2,16 @@
     
     error_reporting(E_ERROR | E_WARNING | E_PARSE);
     
-    include "lzw.inc.php";
+    include "killme.php";
+    // include "lzw.inc.php";
     
     // ENV
     const PROPS_URL = "https://pastebin.com/raw/NPihZzpu";
     const DATA_PATH = "./data/";
     const MIGRATIONS_PATH = "./migrations/";
     const ENCODE = true;
-    const ENCODE_RANGE = [10000, 50000];
-    const MODE = 0; //0: render; 1: debug; 2: statistics;
+    const ENCODE_RANGE = [0, 99999999];
+    const MODE = 0; //0: data; 1: debug; 2: statistics;
     
     $create_process_file = fn($props) => function ($path) use ($props) {
         $output = [];
@@ -21,7 +22,7 @@
         $should_encode = ENCODE && $in_encode_range;
         
         $output['path'] = explode('/', substr($path, 7));
-        $output['text'] = $should_encode ? base64_encode(lzw_compress($src)) : $src;
+        $output['text'] = $should_encode ? (lzw_compress($src)) : $src;
         $output["encoded"] = $should_encode;
         foreach ($props["keywords"] as $keyword) :
             $pattern = "/{$keyword}:.*\n/";
@@ -85,7 +86,7 @@
                 $len = strlen($item["text"]);
                 $in_encode_range = $len >= ENCODE_RANGE[0] && $len <= ENCODE_RANGE[1];
                 $should_encode = ENCODE && $in_encode_range;
-                if ($should_encode) $item["text"] = base64_encode(lzw_compress($item["text"]));
+                if ($should_encode) $item["text"] = (lzw_compress($item["text"]));
                 $output[$folder][$filename] = $item;
                 $output[$folder][$filename]["encoded"] = $should_encode;
             endforeach;
@@ -218,7 +219,12 @@
     };
     
     $render_debug = function ($data, $folder, $file) {
-        //print_r($data["data"]["Multiple"]["A Game Gone Wrong.txt"]);
+        print_r($data["data"][$folder][$file]);
+        echo '<br/>';
+        echo '<br/>';
+        print_r(lzw_decompress(base64_decode($data["data"][$folder][$file]["text"])));
+        echo '<br/>';
+        echo '<br/>';
 
         $txt = $data["data"][$folder][$file]["text"];
         $txt_c = lzw_compress($txt);
@@ -238,8 +244,6 @@
     $dataset = $execute();
     
     if (MODE === 0) $render($dataset);
-    elseif (MODE === 1) $render_debug($dataset, "Multiple", "A Game Gone Wrong.txt");
+    elseif (MODE === 1) $render_debug($dataset, "Multiple" , "A Better End Chapter 1.txt");
     elseif (MODE === 2) $render_statistics($dataset);
-    
-    
     

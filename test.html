@@ -1,0 +1,389 @@
+<script type="text/javascript">
+
+const isfirefox = false;
+
+function compress(s){ //lz compression expressed as a bytestream compressed using unicode codepoints (~20-50% more size efficient than the earlier implementation in most cases).  From lz-string by pieroxy under the WTFPL, modified slightly
+	if(isfirefox){return s};
+	function getcharfromint(index){
+		return String.fromCharCode(index);
+	};
+	if(s == null) return "";
+	var i, value,
+	bitsperchar = 16,
+	context_dictionary= {},
+	context_dictionarytocreate= {},
+	context_c="",
+	context_wc="",
+	context_w="",
+	context_elnargein=2, //compensate for the first entry which should not count
+	context_dictsize=3,
+	context_numbits=2,
+	context_data=[],
+	context_data_val=0,
+	context_data_position=0,
+	ii;
+	for(ii=0;ii<s.length;ii+=1){
+		context_c = s.charAt(ii);
+		if(!context_dictionary.hasOwnProperty(context_c)){
+			context_dictionary[context_c] = context_dictsize++;
+			context_dictionarytocreate[context_c] = true;
+		};
+		context_wc = context_w + context_c;
+		if(context_dictionary.hasOwnProperty(context_wc)){
+			context_w = context_wc;
+		}else{
+			if(context_dictionarytocreate.hasOwnProperty(context_w)){
+				if(context_w.charCodeAt(0)<256){
+					for(i=0;i<context_numbits;i++){
+						context_data_val = (context_data_val << 1);
+						if(context_data_position == bitsperchar-1){
+							context_data_position = 0;
+							context_data.push(getcharfromint(context_data_val));
+							context_data_val = 0;
+						}else{
+							context_data_position++;
+						};
+					};
+					value = context_w.charCodeAt(0);
+					for(i=0;i<8;i++){
+						context_data_val = (context_data_val << 1) | (value&1);
+						if(context_data_position == bitsperchar-1){
+							context_data_position = 0;
+							context_data.push(getcharfromint(context_data_val));
+							context_data_val = 0;
+						}else{
+							context_data_position++;
+						};
+						value = value >> 1;
+					};
+				}else{
+					value = 1;
+					for(i=0 ; i<context_numbits ; i++){
+						context_data_val = (context_data_val << 1) | value;
+						if(context_data_position == bitsperchar-1){
+							context_data_position = 0;
+							context_data.push(getcharfromint(context_data_val));
+							context_data_val = 0;
+						}else{
+							context_data_position++;
+						};
+						value = 0;
+					};
+					value = context_w.charCodeAt(0);
+					for(i=0 ; i<16 ; i++){
+						context_data_val = (context_data_val << 1) | (value&1);
+						if(context_data_position == bitsperchar-1){
+							context_data_position = 0;
+							context_data.push(getcharfromint(context_data_val));
+							context_data_val = 0;
+						}else{
+							context_data_position++;
+						};
+						value = value >> 1;
+					};
+				};
+				context_elnargein--;
+				if(context_elnargein == 0){
+					context_elnargein = Math.pow(2, context_numbits);
+					context_numbits++;
+				};
+				delete context_dictionarytocreate[context_w];
+			}else{
+				value = context_dictionary[context_w];
+				for(i=0 ; i<context_numbits ; i++){
+					context_data_val = (context_data_val << 1) | (value&1);
+					if(context_data_position == bitsperchar-1){
+						context_data_position = 0;
+						context_data.push(getcharfromint(context_data_val));
+						context_data_val = 0;
+					}else{
+						context_data_position++;
+					};
+					value = value >> 1;
+				};
+			};
+			context_elnargein--;
+			if(context_elnargein == 0){
+				context_elnargein = Math.pow(2, context_numbits);
+				context_numbits++;
+			};
+			context_dictionary[context_wc] = context_dictsize++; //add wc to the dictionary
+			context_w = String(context_c);
+		};
+	};
+	if(context_w !== ""){ //output the code for w
+		if(context_dictionarytocreate.hasOwnProperty(context_w)){
+			if(context_w.charCodeAt(0)<256){
+				for(i=0;i<context_numbits;i++){
+					context_data_val = (context_data_val << 1);
+					if(context_data_position == bitsperchar-1){
+						context_data_position = 0;
+						context_data.push(getcharfromint(context_data_val));
+						context_data_val = 0;
+					}else{
+						context_data_position++;
+					};
+				};
+				value = context_w.charCodeAt(0);
+				for(i=0;i<8;i++){
+					context_data_val = (context_data_val << 1) | (value&1);
+					if(context_data_position == bitsperchar-1){
+						context_data_position = 0;
+						context_data.push(getcharfromint(context_data_val));
+						context_data_val = 0;
+					}else{
+						context_data_position++;
+					};
+					value = value >> 1;
+				};
+			}else{
+				value = 1;
+				for(i=0;i<context_numbits;i++){
+					context_data_val = (context_data_val << 1) | value;
+					if(context_data_position == bitsperchar-1){
+						context_data_position = 0;
+						context_data.push(getcharfromint(context_data_val));
+						context_data_val = 0;
+					}else{
+						context_data_position++;
+					};
+					value = 0;
+				};
+				value = context_w.charCodeAt(0);
+				for(i=0;i<16;i++){
+					context_data_val = (context_data_val << 1) | (value&1);
+					if(context_data_position == bitsperchar-1){
+						context_data_position = 0;
+						context_data.push(getcharfromint(context_data_val));
+						context_data_val = 0;
+					}else{
+						context_data_position++;
+					};
+					value = value >> 1;
+				};
+			};
+			context_elnargein--;
+			if(context_elnargein == 0){
+				context_elnargein = Math.pow(2, context_numbits);
+				context_numbits++;
+			};
+			delete context_dictionarytocreate[context_w];
+		}else{
+			value = context_dictionary[context_w];
+			for(i=0;i<context_numbits;i++){
+				context_data_val = (context_data_val << 1) | (value&1);
+				if(context_data_position == bitsperchar-1){
+					context_data_position = 0;
+					context_data.push(getcharfromint(context_data_val));
+					context_data_val = 0;
+				}else{
+					context_data_position++;
+				};
+				value = value >> 1;
+			};
+		};
+		context_elnargein--;
+		if(context_elnargein == 0){
+			context_elnargein = Math.pow(2, context_numbits);
+			context_numbits++;
+		};
+	};
+	value = 2; 
+	for(i=0;i<context_numbits;i++){ //mark the end of the stream
+		context_data_val = (context_data_val << 1) | (value&1);
+		if(context_data_position == bitsperchar-1){
+			context_data_position = 0;
+			context_data.push(getcharfromint(context_data_val));
+			context_data_val = 0;
+		}else{
+			context_data_position++;
+		};
+		value = value >> 1;
+	};
+	while(true){ //flush the last char
+		context_data_val = (context_data_val << 1);
+		if(context_data_position == bitsperchar-1){
+			context_data.push(getcharfromint(context_data_val));
+			break;
+		}else{
+			context_data_position++;
+		};
+	};
+	return context_data.join('');
+};
+	
+function decomp(s){ //decompress a binarized lz string.  From lz-string by pieroxy under the WTFPL, modified slightly
+	//if(isfirefox){s = s.replace(/\\u(.{4})/g,(e)=>{String.fromCodePoint("0x"+e)});};
+	if(isfirefox){return s;}; //firefox replaces some characters with their corresponding codepoints, which significantly reduces the benefit of using this kind of string compression.  That wouldn't be an issue if they didn't literally replace characters at EVERY LEVEL OF THE FUCKNG UNICODE CHARACTER SET but no, I can't even use this with just UTF-8.  Firefox is a worse menace than safari at this point. (January 17 2021)
+	function getnextvalue(i){
+		return s.charCodeAt(i);
+	};
+	var dictionary = [],
+	elnargein = 4,
+	dictsize = 4,
+	numbits = 3,
+	length = s.length,
+	entry = "",
+	result = [],
+	resetValue = 32768,
+	data = {val:getnextvalue(0), position:resetValue, index:1},
+	i,w,c,bits,resb,maxpower,power,next;
+	for(i=0;i<3;i+=1){
+		dictionary[i] = i;
+	};
+	bits = 0;
+	maxpower = Math.pow(2,2);
+	power=1;
+	while(power!=maxpower){
+		resb = data.val & data.position;
+		data.position >>= 1;
+		if(data.position == 0){
+			data.position = resetValue;
+			data.val = getnextvalue(data.index++);
+		};
+		bits |= (resb>0 ? 1 : 0) * power;
+		power <<= 1;
+	};
+	switch(next = bits){
+		case 0:
+			bits = 0;
+			maxpower = Math.pow(2,8);
+			power=1;
+			while(power!=maxpower){
+				resb = data.val & data.position;
+				data.position >>= 1;
+				if(data.position == 0){
+					data.position = resetValue;
+					data.val = getnextvalue(data.index++);
+				};
+				bits |= (resb>0 ? 1 : 0) * power;
+				power <<= 1;
+			};
+			c = String.fromCharCode(bits);
+		break;
+		case 1:
+			bits = 0;
+			maxpower = Math.pow(2,16);
+			power=1;
+			while(power!=maxpower){
+				resb = data.val & data.position;
+				data.position >>= 1;
+				if(data.position == 0){
+					data.position = resetValue;
+					data.val = getnextvalue(data.index++);
+				};
+				bits |= (resb>0 ? 1 : 0) * power;
+				power <<= 1;
+			};
+			c = String.fromCharCode(bits);
+		break;
+		case 2:
+			return "";
+		break;
+	};
+	dictionary[3] = c;
+	w = c;
+	result.push(c);
+	while(true){
+		if(data.index > length){
+			return "";
+		};
+		bits = 0;
+		maxpower = Math.pow(2,numbits);
+		power=1;
+		while(power!=maxpower){
+			resb = data.val & data.position;
+			data.position >>= 1;
+			if(data.position == 0){
+				data.position = resetValue;
+				data.val = getnextvalue(data.index++);
+			};
+			bits |= (resb>0 ? 1 : 0) * power;
+			power <<= 1;
+		};
+		switch(c = bits){
+			case 0:
+				bits = 0;
+				maxpower = Math.pow(2,8);
+				power=1;
+				while(power!=maxpower){
+					resb = data.val & data.position;
+					data.position >>= 1;
+					if(data.position == 0){
+						data.position = resetValue;
+						data.val = getnextvalue(data.index++);
+					};
+					bits |= (resb>0 ? 1 : 0) * power;
+					power <<= 1;
+				};
+				dictionary[dictsize++] = String.fromCharCode(bits);
+				c = dictsize-1;
+				elnargein--;
+			break;
+			case 1:
+				bits = 0;
+				maxpower = Math.pow(2,16);
+				power=1;
+				while(power!=maxpower){
+					resb = data.val & data.position;
+					data.position >>= 1;
+					if(data.position == 0){
+						data.position = resetValue;
+						data.val = getnextvalue(data.index++);
+					};
+					bits |= (resb>0 ? 1 : 0) * power;
+					power <<= 1;
+				};
+				dictionary[dictsize++] = String.fromCharCode(bits);
+				c = dictsize-1;
+				elnargein--;
+			break;
+			case 2:
+				return result.join('');
+			break;
+		};
+		if(elnargein == 0){
+			elnargein = Math.pow(2, numbits);
+			numbits++;
+		};
+		if(dictionary[c]){
+			entry = dictionary[c];
+		}else{
+			if(c === dictsize){
+				entry = w + w.charAt(0);
+			}else{
+				return null;
+			};
+		};
+		result.push(entry);
+		dictionary[dictsize++] = w + entry.charAt(0); //add w+entry[0] to the dictionary.
+		elnargein--;
+		w = entry;
+		if(elnargein == 0){
+			elnargein = Math.pow(2, numbits);
+			numbits++;
+		};
+	};
+};
+
+
+
+const fic = "Cleaning wasn’t often as demanding as she wished it would be. As she swished the old-fashioned feather duster back and forth along the top of the fridge, her thoughts stewed in her head, bubbling wildly. It wasn’t necessarily that they took her places she didn’t want to go, but she was afraid they might. The longer she was idle for, the more likely it was.\nDully she wondered if she wasn’t way too young to be this tired. For a long while, she’d started each day wondering what reason she might have to get out of bed, then remembering that she had too many people that she’d be letting down if she gave up. She’d only even started bothering to get her associates because of a promise she’d made. That and her mother’s insistence that getting out there and doing something, even something small, would help. It had, a bit, she supposed. It was a decent distraction from her life.\nIt was her own fault, really. She’d fucked up. She wasn’t really bitter about it, though, not anymore. She wasn’t exactly miserable. Maybe... Resigned was the right word? It was the closest she had, anyway. With all the mistakes she’d made, with as far back as she’d set herself, this was the bed she now had to lie down in.\nHer father’s voice calling her from the lounge room was a welcome return to mundanity.\n“Lucy, could you go down and find the grill in the basement for me?” \nShe put the feather duster down for the minute, thankful for the reprieve from her thoughts, and joined him in the lounge room. “Sure, dad. What for?”\nHe picked up the phone and started flipping through the old phone book they kept in the lounge room. Lucy had to keep an amused smirk down; he and mom were both so old fashioned. “Charity event next week. Big barbecue at the park. Just want to make sure I’ve got everything ready before then.” \n“Oh, cool. Sure, I’ll find it.”\nShe wondered if he might get her to come along and help again as she made her way to the basement. She liked those charity events he participated in – they gave her something to do. She remembered the first one that he’d asked for her help with, a youth fundraiser of some sort. There’d been a bunch of kids there, and at first she’d thought they’d be nothing but annoying – but the moment they extended an invitation for her to come and join in their game, she was quite certain she’d felt her heart melt. They were precious.\nPrecious enough that the next week, when her mom had suggested she go to community college, she knew exactly what kind of course she wanted to look for. It wasn’t anywhere near as prestigious as Naser becoming a doctor, but at least it was something.\nThe basement light was nowhere near as warm and welcoming as the rest of the house as she opened the door and flicked the switch on. There were piles of random old stuff, bits of ancient furniture, unmarked cardboard boxes stacked high, and close to the front, grandma’s old piano. She’d have to be careful with all this stuff... At least mom and dad had the good sense to leave a little empty space to walk in between the assorted bunk.\nHer gaze lingered on the piano as she made her way down the stairs. She remembered learning to play, sitting in front of that thing. It was the first ever instrument she remembered playing. Almost a shame that it be left to rot down here...\nWith a start she realized that her hand had automatically drifted towards it, intent on opening the lid and... and what? She took a step back. Why did she want to play that thing? She hadn’t played in ages. No, she didn’t want to, not really. No point in playing for yourself, and she had no-one around to play for. Not that she wanted to play for anyone.\nShe’d liked playing music, once. \nBut that was then. A darker time, even darker than the grey area she currently inhabited. She had a new life, now. A good one. Well, good-ish, anyway. She was getting there.\nShe gave the piano one last affectionate rap as she stepped past it, intent on continuing her search – and then promptly stopped dead as she saw something resting against the box behind it.\nHer old guitar – No, not her old guitar. That thing wasn’t hers anymore. It didn’t belong to anyone. It was just a guitar.\nWhere the piano was her first instrument, the guitar had once been her favourite. Seeing it again was an instant reminder of times she’d rather leave behind at this point. It was proof positive that she really had loved her music at one point in her life, no matter how much she didn’t care for it anymore. Or how much she pretended she didn’t care. \nMusic had once been pretty much the centrepiece of her life – she’d connected to people through it, she’d had fun with it. She’d found friends through it, she’d found an anchor to hold onto in it. And then... Trish had led her to believe she could build her life around it. \n‘Hey... I’ve got an idea. Since I play bass, and you play guitar...’\nEven now she couldn’t get her out of her head. Trish had used to be cool. Used to be her best friend, as a matter of fact. Lucy had loved her like a sister. They’d started a little band and everything. It was... still difficult for her to think about. She wasn’t even sure if she wanted to think about it at all anymore. She’d had the worst times of her life in that band... and the best. \nFor all the times she’d thought they were worthless, that they weren’t going to make it, there had been a while she’d really thought they might be going places. That one wonderful concert at Uncle Moe’s, where everything had gone right, and people had seen just what she could really do. She’d felt so nervous when they’d started... that Hitler song she couldn’t even remember the name of anymore. She was surprised she’d ever remembered it, honestly. But it had all turned out fantastic, people had loved them when she’d played guitar. Why had Trish insisted on making her play bass for all that time, again? She didn’t like bass. She’d never been good on bass.\n‘We need a hook! We need something to really stand out!’\nHer face soured as she remembered. Trish had just stopped caring about her, is why. Somehow, at some point, for some reason, the band had become more important to that purple bitch than any of the people in it. All she’d ever cared about was marketability, selling tickets, getting famous... trivial things like ‘Lucy’ and ‘Reed’ and anyone else had just become stepping stones for her to get what she wanted.\n‘It was a small crowd. We gotta think bigger now! I still have stock I gotta sell!’\nWhy hadn’t it just been good enough to just have fun? Had it been Trish who’d started wanting to take the band to the big leagues, or had it been her? She couldn’t remember. She remembered she’d just grown to love passing every other lunchtime with band practice, happily shooting the shit with Trish and Reed. Making music together. Showing each other dumb shit on their phones, complaining about their assignments together. \nAfter that one good concert, things had started to look up. Trish had seemed to be softening up to Anon, accepting him as a part of their little friend group. Lucy had been happy to have a new friend – and then, something a little more. \nTrish, however, turned out not to have appreciated that at all.\n‘I was hoping you were just taking a time-out to cool off and reconsider – What’s happening to you, Fang!?”\nThe auditorium. Trish's voice echoing. Fang. That stupid fucking name. Anon wasn’t there. \nThis was why she hadn’t wanted to start thinking. That itchy feeling was returning to her wings, the insistent little nag that promised relief... if she would only mangle herself. Not beyond recognition or anything. Just a bit. Just a touch.\nShe shook her head, taking an involuntary step back. She wasn’t considering that. She was not considering that. She was seriously not even vaguely entertaining that idea. She’d made a promise – twice in fact, both to Anon and to Naser. She wasn’t going to hurt herself anymore. She had to do better. Doing so well for so long wasn’t enough.\n‘... the songs we wrote, the stories we came up with, all gone? Is that it? And for fucking what!?’\nThe screaming. Right in her face. It wasn’t the band anymore, it was just Trish. She’d taken over. How did she even have the nerve to do half the shit she’d done? What was wrong with that lunatic? What had honestly broken in her head that last year? It was like she’d just flipped a switch and become a completely different person. They’d connected over a love of music, started a band together to share it, but... but what? What happened? She loved music so much she’d stopped loving people? Or she stopped loving music, and started loving money and fame instead?\n‘You told me when the year first started you were scared shitless you weren’t gonna amount to anything in life. Are we in this together or not? If not you’ll dive headfirst into exactly that, you’ll be a nobody!’\nHer hands went up to her wings before she jerked them away. Why couldn’t she get that bitch’s voice out of her head? And why did she have to be fucking right? She couldn’t say it wasn’t true, that was the worst of it. Without the band, she was a nobody. She’d gone nowhere. She’d done nothing.\nShe just wanted to leave those memories behind. She wanted a new life, without the band.\n‘Best friends forever, right Lucy?’\nAnother involuntary jerk as she kept her eyes on that guitar. That bitch. She’d made a promise, too.\n“Fuck you, Trish.” Lucy growled at it vehemently. Nobody in the cluttered, dusty basement answered her, but she didn’t expect them to. That guitar was a vector for her memories, but Trish wasn’t able to hear her through it or anything.\nShe was sorely tempted to just up and smash it, but she didn’t. She couldn’t. It wasn’t her guitar. It didn’t belong to her. It wasn’t hers to break.\nBut, when she thought about it... If it wasn’t her guitar, it wasn’t her problem, either. She could just leave it there. She could be better – She wouldn’t break her promise, no matter how much her old ‘friend’ had. She forced her arms down to her side, away from her wings, and took a deep, steadying breath. Inhale, and exhale. Eyes closed. Focus on herself. Focus on quiet. Inhale. Exhale.\nAt length she finally felt calm enough to turn back to the piles of junk again, and she turned her back on the guitar that belonged to no-one. It would be better if she just left it in the dark. It could stay there for all she cared, where it belonged, alongside all her memories of that time.\nNot her problem. She didn’t need it. She didn’t need any of it.\nShe wondered how many times she’d have to repeat that in her head before it became something she believed. Or rather – something she could forget. That dumb band, that stupid dream had stolen enough of her life already, and the sooner she moved the fuck on away from it, the better. She could still be somebody, even if it was just somebody really small. She deserved to just be happy.\nWhen Anon came back, things would turn right around. Him and her, they could be somebodies together.\n“Hey, Lucy! You found the grill yet?” Her father’s gruff voice from upstairs startled her, recalling her to reality. \n“Not yet, dad!” She hadn’t even been looking, actually. “Give me a second, I’ll find it if it’s here! Are you sure it’s not in the garage?”\nThere was a brief pause before he responded. “I dunno. Might be. You keep looking, I’ll go check in there.”\nShe set about the search again with renewed vigour. She needed the distraction.\nShe did not want to think about VVurm Drama anymore.\n";
+
+const c_fic = compress(fic);
+const dc_fic = decomp(compress(fic));
+
+
+console.log("fic.length", fic.length);
+console.log("compress(fic).length", c_fic.length)
+console.log("decomp(compress(fic)).length", dc_fic.length)
+console.log(dc_fic)
+
+
+console.log('AAAA', decomp('ↄ聬ᛘỜꄀꀆ朸ࣘɷ㛱鹥鉈'));
+
+
+
+
+
+</script>
