@@ -1,6 +1,6 @@
 ## Common code standards
 - Use PascalCase for naming classes, types
-- Use kebab-case for style names, classes, ids, attributes, etc
+- Use kebab-case for HTML/CSS style names, classes, ids, attributes, etc
 - Use whitespace to separate logical units (don't go overboard)
 - Prefer semantic naming (ie.: "title" instead of "str", "fics" instead of "items" or "arr")
 - Prefer self-documenting code over comments
