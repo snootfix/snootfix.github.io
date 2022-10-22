@@ -1,0 +1,85 @@
+body, html {
+    padding: 0;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: white;
+}
+
+table {
+    width: 100%;
+}
+
+td, th {
+    text-align: left;
+    padding: 4px 8px;
+}
+
+th {
+    font-size: 18px;
+    background-color: white;
+    border-bottom: 3px solid black;
+    position: sticky;
+    top: 0;
+}
+
+td {
+    font-size: 14px;
+    border-bottom: 1px solid black;
+}
+
+td:nth-child(2) {
+    max-width: 320px;
+    font-weight: bold;
+}
+
+td:nth-child(2):hover {
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+    opacity: 0.6;
+    z-index: 9000;
+    display: none;
+}
+
+.modal {
+    position: fixed;
+    top: 48px;
+    left: 48px;
+    width: calc(100% - 2 * 48px - 2 * 24px);
+    height: calc(100% - 2 * 48px - 2 * 24px);
+    padding: 24px;
+    background-color: white;
+    z-index: 9005;
+    display: none;
+}
+
+.portal {
+    border: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.anon { color: #36E12D }
+.fang { color: #B4D4CE }
+.rosa { color: #FE712B }
+.stella { color: #c1ea9d }
+.naomi { color: #ecc1b0 }
+.naser { color: #FFB561 }
+.trish { color: #B675E6 }
+.reed { color: #ED4C5B }
+.complete { color: green }
+.incomplete { color: firebrick }
+.on-going { color: darkcyan }
+
+.clickable:hover {
+    cursor: pointer;
+    opacity: 0.6;
+}

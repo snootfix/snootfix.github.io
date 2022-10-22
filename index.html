@@ -380,6 +380,7 @@ input, textarea {
             .replaceAll('â', '"');
     };
     
+    //TODO: cleanup
     const openModal = (pathStr, closeable = true) => {
         const path = b64_to_utf8(pathStr).split('Ł');
         const data = get(DATA.data, path);
