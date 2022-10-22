@@ -96,3 +96,23 @@ td:nth-child(2):hover {
     opacity: 1;
     cursor: pointer;
 }
+
+.icon {
+    width: 20px;
+    height: 20px;
+}
+
+.pin,
+.share {
+    opacity: 0.1;
+}
+
+.pin:hover,
+.share:hover {
+    cursor: pointer;
+    opacity: 1;
+}
+
+.pin.active {
+    opacity: 1;
+}

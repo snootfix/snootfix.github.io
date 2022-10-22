@@ -1,3 +1,5 @@
+const LOCAL_STORAGE_KEY = '__beta__snootfix__pins';
+
 const getBodyElement = () => document.querySelector("body");
 
 const getPortalElement = () => document.querySelector(".portal");
@@ -36,6 +38,26 @@ const filterBy = (key, value) => {
     params.filter.value = value;
 
     location.href = serializeQS(params);
+};
+
+const pin = key => {
+    const localStorageParams = parseLocalStorage();
+
+    if (localStorageParams.pins.includes(key)) {
+        localStorageParams.pins = localStorageParams.pins.filter(pinKey => pinKey !== key);
+    } else {
+        localStorageParams.pins = [...localStorageParams.pins, key];
+    }
+
+    serializeLocalStorage(localStorageParams);
+
+    location.reload();
+};
+
+//TODO: copy to clipboard
+const getPermalink = key => {
+    const baseUrl = document.location.href.split("?")[0];
+    alert(baseUrl + '?fic=' + key);
 };
 
 const openModal = () => {
@@ -91,6 +113,7 @@ const parseQS = () => {
             key: paramsObj?.filterKey || null,
             value: paramsObj?.filterValue || null,
         },
+        fic: paramsObj?.fic || null
     };
 };
 
@@ -100,6 +123,7 @@ const serializeQS = params => {
         sortDir: params.sort.dir || null,
         filterKey: params.filter.key || null,
         filterValue: params.filter.value || null,
+        fic: params.fic || null
     };
 
     const qsObj = Object.keys(paramObj).reduce((acc, key) => {
@@ -120,6 +144,27 @@ const parseTableMetadata = () => {
     console.log("metadata", metadata);
 
     return metadata;
+};
+
+const parseLocalStorage = () => {
+    const lsObjectString = localStorage.getItem(LOCAL_STORAGE_KEY) || "{}";
+    const lsObject = JSON.parse(lsObjectString);
+
+    console.log("localstorage", lsObject);
+
+    return {
+        pins: lsObject?.pins || []
+    };
+};
+
+const serializeLocalStorage = params => {
+    const lsObject = {
+        pins: params?.pins || []
+    };
+
+    const lsObjectString = JSON.stringify(lsObject);
+
+    localStorage.setItem(LOCAL_STORAGE_KEY, lsObjectString);
 };
 
 const filterTableRows = (params, metadata) => {
@@ -145,7 +190,7 @@ const filterTableRows = (params, metadata) => {
     const filterRows = () => {
         rows.forEach(tr => {
             const cell = tr.querySelector(`td[data-key=${key}]`);
-            const text = (cell.textContent || "").trim().toLowerCase();
+            const text = encodeURI((cell.textContent || "").trim().toLowerCase());
             const pattern = value.trim().toLowerCase();
 
             const isMatch = key === "characters" ? text.includes(pattern) : text === pattern;
@@ -209,10 +254,40 @@ const sortTableRows = (params, metadata) => {
     addHeaderTriangle();
 };
 
+const pinTableRows = (localStorageParams) => {
+    const table = getTableElement();
+    const tbody = table.querySelector("tbody");
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+
+    const pins = localStorageParams.pins || [];
+
+    console.log("pins", pins);
+
+    rows.forEach(tr => {
+        const rowKey = tr.getAttribute("data-key");
+        if (!pins.includes(rowKey)) return;
+
+        const icon = tr.querySelector(".icon.pin");
+        icon.classList.add("active");
+
+        tbody.prepend(tr.cloneNode(true));
+        tr.remove();
+    });
+};
+
+const parsePermalink = params => {
+    if (!params.fic) return;
+    openFile(params.fic);
+};
+
+//TODO: niceify read modal
 const init = () => {
+    const localStorageParams = parseLocalStorage();
     const metadata = parseTableMetadata();
     const params = parseQS();
 
     filterTableRows(params, metadata);
     sortTableRows(params, metadata);
+    pinTableRows(localStorageParams);
+    parsePermalink(params);
 };
