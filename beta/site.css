@@ -83,3 +83,16 @@ td:nth-child(2):hover {
     cursor: pointer;
     opacity: 0.6;
 }
+
+.filter-clear {
+    position: fixed;
+    top: 48px;
+    right: 24px;
+    background-color: white;
+    opacity: 0.2;
+}
+
+.filter-clear:hover {
+    opacity: 1;
+    cursor: pointer;
+}
