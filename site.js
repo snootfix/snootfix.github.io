@@ -206,7 +206,7 @@ const filterTableRows = (params, metadata) => {
     const addClearFilterBadge = () => {
         const filterClear = document.createElement('div');
 
-        filterClear.innerHTML = '<a href="/">Clear filters</a>';
+        filterClear.innerHTML = '<a href="/beta">Clear filters</a>';
         filterClear.classList.add("filter-clear");
 
         document.querySelector('body').append(filterClear);
@@ -253,10 +253,11 @@ const sortTableRows = (params, metadata) => {
 
         const values = rows.map((tr, index) => {
             const cell = tr.querySelector(`td[data-key=${key}]`);
+            const sortValue = cell.getAttribute("data-sort-value");
 
             return {
                 index,
-                value: (cell.textContent || "").trim(),
+                value: ((sortValue ?? cell.textContent) || "").trim(),
             };
         });
 
