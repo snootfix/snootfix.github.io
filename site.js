@@ -218,7 +218,7 @@ const filterTableRows = (params, metadata) => {
             const text = encodeURI((cell.textContent || "").trim().toLowerCase());
             const pattern = value.trim().toLowerCase();
 
-            const isMatch = key === "characters" ? text.includes(pattern) : text === pattern;
+            const isMatch = ["characters", "genre"].includes(key) ? text.includes(pattern) : text === pattern;
 
             if (!isMatch) {
                 tr.remove();
