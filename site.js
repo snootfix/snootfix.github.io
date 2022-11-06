@@ -54,7 +54,6 @@ const pin = key => {
     location.reload();
 };
 
-//TODO: copy to clipboard
 const getPermalink = key => {
     const makeInput = text => {
         const id = "copyable_hidden_input_" + String(Date.now()) + String(Math.random() * 1000);
@@ -83,6 +82,20 @@ const getPermalink = key => {
 
     copyText(document.location.origin + `?fic=${key}`);
     alert("Permalink copied to clipboard!");
+};
+
+const toggleRowSubContent = key => {
+    const table = getTableElement();
+    const tr = table.querySelector(`tr[data-key="${key}"]`);
+    const trRect = tr.getBoundingClientRect();
+
+    if (tr.classList.contains("open")) {
+        tr.classList.remove("open");
+        tr.style.height = `${trRect.height - 200}px`;
+    } else {
+        tr.classList.add("open");
+        tr.style.height = `${trRect.height + 200}px`;
+    }
 };
 
 const openModal = () => {

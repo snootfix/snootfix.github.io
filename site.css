@@ -20,6 +20,7 @@ th {
     border-bottom: 3px solid black;
     position: sticky;
     top: 0;
+    z-index: 100;
 }
 
 td {
@@ -35,6 +36,10 @@ td:nth-child(2) {
 td:nth-child(2):hover {
     cursor: pointer;
     opacity: 0.6;
+}
+
+tr {
+    vertical-align: top;
 }
 
 .backdrop {
@@ -119,23 +124,28 @@ td:nth-child(2):hover {
     opacity: 1;
 }
 
-.more:hover ~ .row-subcontent-wrapper {
+tr.open .icon.more {
+    opacity: 1;
+}
+
+tr.open .row-subcontent-wrapper {
     display: block;
 }
 
 .row-subcontent-wrapper {
     position: relative;
     display: none;
+    z-index: 10;
 }
 
 .row-subcontent {
     position: absolute;
+    width: calc(100vw - 78px);
+    height: calc(200px - 16px);
     top: 0;
-    right: 32px;
+    left: 28px;
     text-align: justify;
-    border: 1px black solid;
-    padding: 0 16px 16px;
-    width: 400px;
+    padding: 8px;
     background-color: #ffffff;
 }
 
