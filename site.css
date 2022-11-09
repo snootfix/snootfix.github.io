@@ -42,6 +42,10 @@ tr {
     vertical-align: top;
 }
 
+tr:hover td {
+    background-color: #efeeed;
+}
+
 .backdrop {
     position: fixed;
     top: 0;
@@ -146,7 +150,10 @@ tr.open .row-subcontent-wrapper {
     left: 28px;
     text-align: justify;
     padding: 8px;
-    background-color: #ffffff;
+}
+
+.row-subcontent-item {
+    max-width: 50%;
 }
 
 .row-subcontent-item:not(:last-child) {
@@ -159,4 +166,12 @@ tr.open .row-subcontent-wrapper {
     font-size: 16px;
     line-height: 18px;
     width: calc(100% - 48px);
+}
+
+.spoiler {
+    background-color: black;
+}
+
+.spoiler:hover {
+    background-color: transparent;
 }
